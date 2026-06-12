@@ -24,7 +24,7 @@ import Link from 'next/link';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([
-    { id: 1, sender: 'assistant', text: "Hello! I am your AI Welfare Officer. Tell me about yourself, such as your education, state, family income, and career goals. I will extract your details, analyze eligibility, review document wallet readiness, and map a custom application plan. For example, try typing:\n\n'I am a second-year IT student from Rajasthan and my family income is ₹2 lakh.'" }
+    { id: 1, sender: 'assistant', text: "Hello! I am your AI Welfare Officer. Tell me about yourself, such as your education, state, family income, and career goals. I will extract your details, analyze eligibility, review document wallet readiness, and map a custom application plan. For example, try typing:\n\n'I am a student from Rajasthan and my family income is ₹2 lakh.'" }
   ]);
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -57,8 +57,8 @@ export default function ChatPage() {
 
   useEffect(() => {
     // Initial fetch of profile details
-    api.getDashboard().then(res => {
-      setProfile(res.data.profile);
+    api.getProfile().then(res => {
+      if (res.data) setProfile(res.data);
     }).catch(err => console.log(err));
 
     // Setup speech recognition
@@ -68,7 +68,7 @@ export default function ChatPage() {
         const rec = new SpeechRecognition();
         rec.continuous = false;
         rec.interimResults = false;
-        rec.lang = 'en-IN'; // English (India) works great for Indian accents
+        rec.lang = 'en-IN';
 
         rec.onresult = (event) => {
           const transcript = event.results[0][0].transcript;
@@ -136,23 +136,23 @@ export default function ChatPage() {
       setTimeout(() => {
         setAgentStatus(prev => ({ ...prev, profiler: 'completed', eligibility: 'running' }));
         if (output.profile) setProfile(output.profile);
-      }, 1500);
+      }, 1200);
 
       setTimeout(() => {
         setAgentStatus(prev => ({ ...prev, eligibility: 'completed', explainability: 'running' }));
-      }, 2500);
+      }, 2200);
 
       setTimeout(() => {
         setAgentStatus(prev => ({ ...prev, explainability: 'completed', document: 'running' }));
-      }, 3500);
+      }, 3200);
 
       setTimeout(() => {
         setAgentStatus(prev => ({ ...prev, document: 'completed', roadmap: 'running' }));
-      }, 4500);
+      }, 4200);
 
       setTimeout(() => {
         setAgentStatus(prev => ({ ...prev, roadmap: 'completed', lifeEvent: 'running' }));
-      }, 5500);
+      }, 5200);
 
       setTimeout(() => {
         setAgentStatus(prev => ({ ...prev, lifeEvent: 'completed' }));
@@ -162,16 +162,16 @@ export default function ChatPage() {
         let responseText = "";
         
         if (matched && matched.length > 0) {
-          responseText = `I have updated your digital twin profile and mapped it against active policies. Good news! You are eligible for **${matched.length} government schemes**. Here are the top matches:\n\n`;
+          responseText = `I have updated your digital twin profile and mapped it against active welfare policies. Good news! You are eligible for **${matched.length} government schemes**:\n\n`;
           
           matched.forEach((m, idx) => {
             responseText += `${idx + 1}. **${m.scheme_name}** (${m.match_percentage}% Match)\n`;
             responseText += `   • **Benefits:** ${m.benefits}\n`;
-            responseText += `   • **Eligibility Check:** ${m.explanation.summary}\n`;
-            responseText += `   • **Document Wallet Checklist:** ${m.documentStatus.available.length} uploaded, ${m.documentStatus.missing.length} missing (Readiness: ${m.documentStatus.readinessScore}%)\n\n`;
+            responseText += `   • **Audit Criteria:** ${m.eligibility.summary}\n`;
+            responseText += `   • **Document Readiness:** ${m.documentStatus.available.length} uploaded, ${m.documentStatus.missing.length} missing (${m.documentStatus.readinessScore}% Complete)\n\n`;
           });
           
-          responseText += `I have created custom, day-by-day application roadmaps for these schemes. Navigate to the **Schemes Explorer** page to check out the details!`;
+          responseText += `I have created custom, day-by-day application roadmaps for these schemes. Navigate to the **Roadmaps** page to check out the details!`;
         } else {
           responseText = `I analyzed your profile details against our guidelines database, but could not locate schemes matching your specific parameters with high confidence. Try checking your profile parameters in the Dashboard, or type details about your farm holdings, business ideas, or academic studies to search again.`;
         }
@@ -183,7 +183,7 @@ export default function ChatPage() {
           sources: matched?.map(m => m.scheme_name)
         }]);
         setLoading(false);
-      }, 6500);
+      }, 6200);
 
     } catch (err) {
       console.error(err);
@@ -204,25 +204,14 @@ export default function ChatPage() {
     }
   };
 
-  const getAgentBadge = (status) => {
-    switch (status) {
-      case 'running':
-        return <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse active-agent-glow" />;
-      case 'completed':
-        return <span className="h-2 w-2 rounded-full bg-emerald-500" />;
-      default:
-        return <span className="h-2 w-2 rounded-full bg-slate-700" />;
-    }
-  };
-
   const getAgentTextClass = (status) => {
     switch (status) {
       case 'running':
-        return 'text-amber-400 font-bold';
+        return 'text-amber-500 font-bold';
       case 'completed':
-        return 'text-emerald-400 font-semibold';
+        return 'text-emerald-600 dark:text-emerald-450 font-semibold';
       default:
-        return 'text-slate-500';
+        return 'text-slate-400 dark:text-slate-500';
     }
   };
 
@@ -231,14 +220,14 @@ export default function ChatPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(100vh-140px)] max-w-7xl mx-auto">
         
         {/* Left: Chat Area (3 columns on lg) */}
-        <div className="lg:col-span-3 flex flex-col h-full bg-[#090e18]/40 border border-slate-900/80 rounded-3xl overflow-hidden relative">
+        <div className="lg:col-span-3 flex flex-col h-full bg-white dark:bg-[#0c101b]/40 border border-slate-200 dark:border-slate-850 rounded-3xl overflow-hidden relative shadow-xs">
           
           {/* Header */}
-          <div className="px-6 py-4 border-b border-slate-900 flex items-center gap-3 bg-[#0a0f1c]/90">
-            <Bot className="h-6 w-6 text-blue-500" />
+          <div className="px-6 py-4 border-b border-slate-200/80 dark:border-slate-900 flex items-center gap-3 bg-slate-50 dark:bg-[#0a0f1c]/90">
+            <Bot className="h-6 w-6 text-blue-600" />
             <div>
-              <h3 className="font-extrabold text-sm text-white">AI Welfare Officer</h3>
-              <p className="text-[10px] text-slate-500 mt-0.5">Autonomous Agent Network Active</p>
+              <h3 className="font-extrabold text-sm text-slate-800 dark:text-white">AI Welfare Officer</h3>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-bold uppercase tracking-wider">Multi-Agent Welfare Network Active</p>
             </div>
           </div>
 
@@ -250,28 +239,28 @@ export default function ChatPage() {
                 className={`flex gap-4 max-w-2xl ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
               >
                 {/* Icon */}
-                <div className={`h-8 w-8 rounded-xl shrink-0 flex items-center justify-center border font-bold text-xs ${
+                <div className={`h-8.5 w-8.5 rounded-xl shrink-0 flex items-center justify-center border font-bold text-xs ${
                   msg.sender === 'user' 
-                    ? 'bg-blue-600/10 border-blue-500/20 text-blue-400' 
-                    : 'bg-slate-950 border-slate-800 text-slate-400'
+                    ? 'bg-blue-50 dark:bg-blue-600/10 border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400' 
+                    : 'bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
                 }`}>
-                  {msg.sender === 'user' ? 'U' : <Bot className="h-4.5 w-4.5 text-blue-400" />}
+                  {msg.sender === 'user' ? 'U' : <Bot className="h-4.5 w-4.5 text-blue-600 dark:text-blue-500" />}
                 </div>
 
                 {/* Text Bubble */}
-                <div className={`p-4 rounded-2xl border text-sm leading-relaxed whitespace-pre-line ${
+                <div className={`p-4 rounded-2xl border text-xs md:text-sm leading-relaxed whitespace-pre-line ${
                   msg.sender === 'user'
-                    ? 'bg-blue-600/10 border-blue-500/15 text-blue-100 rounded-tr-none shadow-[inset_0_0_15px_rgba(37,99,235,0.05)]'
-                    : 'bg-slate-900/60 border-slate-850/60 text-slate-200 rounded-tl-none'
+                    ? 'bg-blue-600 text-white border-blue-600 rounded-tr-none shadow-sm'
+                    : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-850/60 text-slate-700 dark:text-slate-200 rounded-tl-none shadow-2xs'
                 }`}>
                   {msg.text}
                   
                   {/* Sources display */}
                   {msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-slate-800/40 flex flex-wrap gap-2 items-center text-[10px]">
-                      <span className="text-slate-500 font-bold uppercase tracking-wider">Citations:</span>
+                    <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800/40 flex flex-wrap gap-2 items-center text-[9px]">
+                      <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Reference citations:</span>
                       {msg.sources.map((s, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400">
+                        <span key={i} className="px-2 py-0.5 rounded bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold shadow-3xs">
                           {s}
                         </span>
                       ))}
@@ -284,40 +273,40 @@ export default function ChatPage() {
             {/* Simulated Live Agent Actions Bubble while loading */}
             {loading && (
               <div className="flex gap-4 max-w-2xl">
-                <div className="h-8 w-8 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center font-bold text-xs text-slate-500">
+                <div className="h-8.5 w-8.5 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center font-bold text-xs text-slate-400">
                   <Activity className="h-4.5 w-4.5 text-amber-500 animate-spin" />
                 </div>
-                <div className="p-4 rounded-2xl border bg-slate-900/50 border-slate-850/60 text-slate-400 rounded-tl-none w-full space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold">
+                <div className="p-4 rounded-2xl border bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-850/60 text-slate-500 dark:text-slate-400 rounded-tl-none w-full space-y-3.5 shadow-2xs">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
                     <RefreshCw className="h-3.5 w-3.5 text-amber-500 animate-spin" />
-                    <span>Agent Workflow Processing...</span>
+                    <span>Agent Workflow orchestrator active...</span>
                   </div>
                   
-                  <div className="space-y-1.5 pl-5 border-l border-slate-800 text-[11px]">
-                    <p className={agentStatus.profiler === 'running' ? 'text-amber-400 font-bold' : 'text-slate-500'}>
-                      ● Profiling Agent: Extracting structured JSON keys from text...
+                  <div className="space-y-1.5 pl-5 border-l border-slate-200 dark:border-slate-800 text-[10px] font-mono">
+                    <p className={agentStatus.profiler === 'running' ? 'text-amber-500 font-bold' : 'text-slate-450 dark:text-slate-500'}>
+                      ● Profiler Agent: Extracting state, income & parameters from text...
                     </p>
-                    <p className={agentStatus.eligibility === 'running' ? 'text-amber-400 font-bold' : 'text-slate-500'}>
-                      ● Eligibility Agent: Evaluating state/income criteria matrices...
+                    <p className={agentStatus.eligibility === 'running' ? 'text-amber-500 font-bold' : 'text-slate-450 dark:text-slate-500'}>
+                      ● Eligibility Agent: Checking state criteria rules matrix...
                     </p>
-                    <p className={agentStatus.explainability === 'running' ? 'text-amber-400 font-bold' : 'text-slate-500'}>
-                      ● Explainability Agent: Audit guidelines rationale checks...
+                    <p className={agentStatus.explainability === 'running' ? 'text-amber-500 font-bold' : 'text-slate-450 dark:text-slate-500'}>
+                      ● Explainability Agent: Creating qualification checkpoints rationale...
                     </p>
-                    <p className={agentStatus.document === 'running' ? 'text-amber-400 font-bold' : 'text-slate-500'}>
-                      ● Document Agent: Cross-referencing missing wallet papers...
+                    <p className={agentStatus.document === 'running' ? 'text-amber-500 font-bold' : 'text-slate-450 dark:text-slate-500'}>
+                      ● Document Agent: Cross-referencing secure wallet requirements...
                     </p>
-                    <p className={agentStatus.roadmap === 'running' ? 'text-amber-400 font-bold' : 'text-slate-500'}>
-                      ● Roadmap Agent: Charting application day checklists...
+                    <p className={agentStatus.roadmap === 'running' ? 'text-amber-500 font-bold' : 'text-slate-450 dark:text-slate-500'}>
+                      ● Roadmap Agent: Mappings timeline & checklist roadmaps...
                     </p>
-                    <p className={agentStatus.lifeEvent === 'running' ? 'text-amber-400 font-bold' : 'text-slate-500'}>
-                      ● Life Event Agent: Estimating lifecycle opportunities...
+                    <p className={agentStatus.lifeEvent === 'running' ? 'text-amber-500 font-bold' : 'text-slate-450 dark:text-slate-500'}>
+                      ● Life Event Agent: Evaluating future opportunities milestones...
                     </p>
                   </div>
 
                   <div className="flex gap-1 items-center pt-2">
-                    <span className="h-2 w-2 rounded-full bg-blue-500 dot-blink" />
-                    <span className="h-2 w-2 rounded-full bg-blue-500 dot-blink" />
-                    <span className="h-2 w-2 rounded-full bg-blue-500 dot-blink" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dot-blink" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dot-blink" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dot-blink" />
                   </div>
                 </div>
               </div>
@@ -327,77 +316,77 @@ export default function ChatPage() {
           </div>
 
           {/* Prompt Form */}
-          <form onSubmit={handleSend} className="p-4 border-t border-slate-900 bg-[#0a0f1c]/90 flex gap-3 items-center">
+          <form onSubmit={handleSend} className="p-4 border-t border-slate-200 dark:border-slate-900 bg-slate-50 dark:bg-[#0a0f1c]/90 flex gap-3 items-center">
             <button
               type="button"
               onClick={handleVoiceInput}
-              className={`p-3 rounded-xl border transition-all ${
+              className={`p-3 rounded-2xl border transition-all ${
                 isListening 
-                  ? 'bg-red-500/10 border-red-500 text-red-500 animate-pulse' 
-                  : 'bg-slate-900 hover:bg-slate-850 border-slate-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-red-50 dark:bg-red-500/10 border-red-500 text-red-500 animate-pulse' 
+                  : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600'
               }`}
               title="Speak to AI Officer"
             >
-              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              {isListening ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}
             </button>
             
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder={isListening ? "Listening... Speak now" : "Tell me about your status (e.g. state, occupation, income)..."}
-              className="flex-1 px-4 py-3 bg-[#070b13] border border-slate-800 focus:border-blue-500 rounded-xl text-sm text-white placeholder-slate-600 outline-none transition"
+              placeholder={isListening ? "Listening... Speak now" : "Tell me about your status (e.g. Rajasthan, Student, income)..."}
+              className="flex-1 px-4 py-3 bg-white dark:bg-[#070b13] border border-slate-200 dark:border-slate-800 focus:border-blue-600 dark:focus:border-blue-500 rounded-2xl text-xs md:text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-650 outline-none transition"
               disabled={loading}
             />
 
             <button
               type="submit"
               disabled={!inputText.trim() || loading}
-              className="p-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800/50 disabled:cursor-not-allowed text-white rounded-xl shadow-lg transition"
+              className="p-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white rounded-2xl shadow-md transition"
             >
-              <Send className="h-5 w-5" />
+              <Send className="h-4.5 w-4.5" />
             </button>
           </form>
 
         </div>
 
-        {/* Right: Dynamic Profile Summary & Agent visualizer (1 col) */}
+        {/* Right: Extracted Profile Summary & Pipeline Connection Sidebar (1 column) */}
         <div className="hidden lg:flex flex-col gap-6 h-full overflow-y-auto">
           
           {/* Extracted Profile */}
-          <div className="p-5 rounded-2xl bg-[#090e18]/60 border border-slate-900/80">
-            <h4 className="font-extrabold text-white text-xs uppercase tracking-wider pb-3 border-b border-slate-900 mb-4 flex items-center gap-1.5">
-              <User className="h-4.5 w-4.5 text-blue-400" />
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#090e18]/60 border border-slate-200 dark:border-slate-900/80 shadow-xs text-xs">
+            <h4 className="font-extrabold text-slate-800 dark:text-white uppercase tracking-wider pb-3 border-b border-slate-100 dark:border-slate-900 mb-4 flex items-center gap-1.5">
+              <User className="h-4 w-4 text-blue-600" />
               Extracted Profile
             </h4>
             
-            <div className="space-y-3 text-xs">
+            <div className="space-y-3">
               {[
-                { label: "Age", val: profile?.age ? `${profile.age} Years` : '—' },
-                { label: "Gender", val: profile?.gender || '—' },
-                { label: "Income", val: profile?.income ? `₹${profile.income.toLocaleString()}` : '—' },
                 { label: "State", val: profile?.state || '—' },
                 { label: "Occupation", val: profile?.occupation || '—' },
+                { label: "Family Income", val: profile?.income ? `₹${profile.income.toLocaleString()}` : '—' },
+                { label: "Age", val: profile?.age ? `${profile.age} Years` : '—' },
+                { label: "Gender", val: profile?.gender || '—' },
                 { label: "Education", val: profile?.education || '—' }
               ].map((p, idx) => (
-                <div key={idx} className="flex justify-between items-center py-1.5 border-b border-slate-850/30">
-                  <span className="text-slate-500 font-medium">{p.label}</span>
-                  <span className="text-slate-300 font-bold capitalize">{p.val}</span>
+                <div key={idx} className="flex justify-between items-center py-1.5 border-b border-slate-50 dark:border-slate-850/30">
+                  <span className="text-slate-450 dark:text-slate-500 font-semibold">{p.label}</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-bold capitalize">{p.val}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Agent Workflow Connections */}
-          <div className="p-5 rounded-2xl bg-[#090e18]/60 border border-slate-900/80 flex-1 flex flex-col">
-            <h4 className="font-extrabold text-white text-xs uppercase tracking-wider pb-3 border-b border-slate-900 mb-5 flex items-center gap-1.5">
-              <GitPullRequest className="h-4.5 w-4.5 text-emerald-400" />
-              Agent Workflow Pipeline
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#090e18]/60 border border-slate-200 dark:border-slate-900/80 shadow-xs flex-1 flex flex-col">
+            <h4 className="font-extrabold text-slate-800 dark:text-white uppercase tracking-wider pb-3 border-b border-slate-100 dark:border-slate-900 mb-5 flex items-center gap-1.5">
+              <GitPullRequest className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              Agent Pipe Connections
             </h4>
 
-            <div className="flex-1 flex flex-col justify-around text-xs pl-2 relative">
+            <div className="flex-1 flex flex-col justify-around text-[10px] pl-2 relative">
               {/* Connected Line */}
-              <div className="absolute left-3.5 top-5 bottom-5 w-px bg-slate-800 z-0" />
+              <div className="absolute left-3 top-5 bottom-5 w-0.5 bg-slate-100 dark:bg-slate-800 z-0" />
               
               {[
                 { key: 'profiler', name: "Citizen Profiling Agent", role: "A1: Demographic Extractor" },
@@ -409,19 +398,19 @@ export default function ChatPage() {
               ].map((node) => {
                 const status = agentStatus[node.key];
                 return (
-                  <div key={node.key} className="flex gap-4 items-center relative z-10 py-1.5">
-                    <div className={`h-3 w-3 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                  <div key={node.key} className="flex gap-4 items-center relative z-10 py-1">
+                    <div className={`h-2.5 w-2.5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                       status === 'running' 
-                        ? 'bg-amber-500 border-amber-500 active-agent-glow scale-125' 
+                        ? 'bg-amber-500 border-amber-500 scale-125 shadow-xs' 
                         : status === 'completed'
                           ? 'bg-emerald-500 border-emerald-500 scale-100'
-                          : 'bg-slate-950 border-slate-800 scale-100'
+                          : 'bg-slate-200 dark:bg-slate-950 border-slate-300 dark:border-slate-800 scale-100'
                     }`} />
                     <div>
-                      <p className={`font-bold text-[11px] ${getAgentTextClass(status)}`}>
+                      <p className={`font-bold text-[10.5px] ${getAgentTextClass(status)}`}>
                         {node.name}
                       </p>
-                      <p className="text-[9px] text-slate-500 mt-0.5">{node.role}</p>
+                      <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5">{node.role}</p>
                     </div>
                   </div>
                 );
